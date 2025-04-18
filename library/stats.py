@@ -398,9 +398,9 @@ class Gpu:
 
         except requests.RequestException as e:
             logger.error(f"Erro ao buscar dados do endpoint: {e}")
-            load = memory_percentage = memory_used_mb = total_memory_mb = temperature = math.nan
-            fps = -1
-            fan_percent = freq_ghz = math.nan
+            load = memory_percentage = memory_used_mb = total_memory_mb = temperature = 0.0
+            fps = 0
+            fan_percent = freq_ghz = 0.0
 
         theme_gpu_data = config.THEME_DATA['STATS']['GPU']
 
@@ -615,7 +615,7 @@ class Gpu:
             response.raise_for_status()
             return True
         except requests.RequestException:
-            return False
+            return True
 
 
 class Memory:
