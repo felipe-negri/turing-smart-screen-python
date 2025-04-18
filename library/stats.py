@@ -381,10 +381,26 @@ class Gpu:
 
     @classmethod
     def stats(cls):
-        load, memory_percentage, memory_used_mb, total_memory_mb, temperature = sensors.Gpu.stats()
-        fps = sensors.Gpu.fps()
-        fan_percent = sensors.Gpu.fan_percent()
-        freq_ghz = sensors.Gpu.frequency() / 1000
+        endpoint_url = "http://192.168.50.55:5050/gpu-stats"  # URL do endpoint
+        try:
+            response = requests.get(endpoint_url)
+            response.raise_for_status()
+            data = response.json()
+
+            load = data.get("load", math.nan)
+            memory_percentage = data.get("memory_percentage", math.nan)
+            memory_used_mb = data.get("memory_used_mb", math.nan)
+            total_memory_mb = data.get("total_memory_mb", math.nan)
+            temperature = data.get("temperature", math.nan)
+            fps = data.get("fps", -1)
+            fan_percent = data.get("fan_percent", math.nan)
+            freq_ghz = data.get("freq_ghz", math.nan)
+
+        except requests.RequestException as e:
+            logger.error(f"Erro ao buscar dados do endpoint: {e}")
+            load = memory_percentage = memory_used_mb = total_memory_mb = temperature = math.nan
+            fps = -1
+            fan_percent = freq_ghz = math.nan
 
         theme_gpu_data = config.THEME_DATA['STATS']['GPU']
 
@@ -594,7 +610,12 @@ class Gpu:
 
     @staticmethod
     def is_available():
-        return sensors.Gpu.is_available()
+        try:
+            response = requests.get("http://192.168.50.55:5050/gpu-stats")
+            response.raise_for_status()
+            return True
+        except requests.RequestException:
+            return False
 
 
 class Memory:
