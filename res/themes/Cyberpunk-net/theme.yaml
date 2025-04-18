@@ -14,7 +14,7 @@ static_images:
     HEIGHT: 480
 static_text:
   CPU_MODEL:
-    TEXT: Your CPU model here
+    TEXT: Intel Core i9-12900HK
     X: 50
     Y: 127
     FONT: generale-mono/GeneraleMonoA.ttf
@@ -22,7 +22,7 @@ static_text:
     FONT_COLOR: 255, 239, 8
     BACKGROUND_IMAGE: background.png
   GPU_MODEL:
-    TEXT: Your GPU model here
+    TEXT: ASUS ROG STRIX 3080
     X: 50
     Y: 215
     FONT: generale-mono/GeneraleMonoA.ttf
@@ -30,7 +30,7 @@ static_text:
     FONT_COLOR: 255, 239, 8
     BACKGROUND_IMAGE: background.png
   RAM_MODEL:
-    TEXT: Your RAM model here
+    TEXT: Kingston Fury 2x32GB
     X: 50
     Y: 303
     FONT: generale-mono/GeneraleMonoA.ttf

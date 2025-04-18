@@ -10,7 +10,7 @@ config:
   # Theme to use (located in res/themes)
   # Use the name of the folder as value
   # Choose a theme made for your screen size (see DISPLAY_SIZE inside theme.yaml)
-  THEME: 3.5inchTheme2
+  THEME: Cyberpunk-net
 
   # Hardware sensors reading
   # Choose the appropriate method for reading your hardware sensors:
@@ -24,7 +24,7 @@ config:
   # Linux/MacOS interfaces are named "eth0", "wlan0", "wlp1s0", "enp2s0"...
   # For Windows use the interfaces pretty name: "Ethernet 2", "Wi-Fi", ...
   # Leave the fields empty if the card does not exist on your setup
-  ETH: "" # Ethernet Card
+  ETH: "bond0" # Ethernet Card
   WLO: "" # Wi-Fi Card
 
   # CPU fan
@@ -41,14 +41,14 @@ config:
 
   # OpenWeatherMap API KEY. Can be obtained by creating a free account on https://home.openweathermap.org/users/sign_up.
   # You need to subscribe to the 3.0 OneCallAPI that has 1000 free daily calls
-  WEATHER_API_KEY: ""
+  WEATHER_API_KEY: "ad89f5d3b6439c9f0195d131a129947e"
   # Location from which to display the weather. Use for example https://www.latlong.net/ to get latitude/longitude
-  WEATHER_LATITUDE: 45.75
-  WEATHER_LONGITUDE: 4.85
+  WEATHER_LATITUDE: '-23.5410307'
+  WEATHER_LONGITUDE: '-46.5052421'
   # Units used to display temperatures (metric - °C, imperial - °F, standard - °K)
   WEATHER_UNITS: metric
   # Language is used by the API. Find more here https://openweathermap.org/api/one-call-3#multi
-  WEATHER_LANGUAGE: en
+  WEATHER_LANGUAGE: pt_br
 
 display:
   # Display revision:
@@ -68,4 +68,3 @@ display:
   # Display reverse: true/false
   # Set to true to reverse display orientation (landscape <-> reverse landscape, portrait <-> reverse portrait)
   # Note: Display basic orientation (portrait or landscape) is defined by the theme you have selected
-  DISPLAY_REVERSE: false
