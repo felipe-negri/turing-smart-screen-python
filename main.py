@@ -3,29 +3,15 @@
 # https://github.com/mathoudebine/turing-smart-screen-python/
 
 # Copyright (C) 2021-2023  Matthieu Houdebine (mathoudebine)
-# Copyright (C) 2022-2023  Rollbacke
-# Copyright (C) 2022-2023  Ebag333
-# Copyright (C) 2022-2023  w1ld3r
-# Copyright (C) 2022-2023  Charles Ferguson (gerph)
-# Copyright (C) 2022-2023  Russ Nelson (RussNelson)
-#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# This file is the system monitor main program to display HW sensors on your screen using themes (see README)
 import glob
 import os
 import sys
+import requests
 
 MIN_PYTHON = (3, 9)
 if sys.version_info < MIN_PYTHON:
@@ -71,6 +57,16 @@ except:
     pass
 
 MAIN_DIRECTORY = str(Path(__file__).parent.resolve()) + "/"
+
+def get_gpu_status_from_endpoint(endpoint_url):
+    """Função para buscar o status da GPU de um endpoint HTTP."""
+    try:
+        response = requests.get(endpoint_url, timeout=5)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        logger.error(f"Erro ao buscar status da GPU do endpoint: {e}")
+        return None
 
 if __name__ == "__main__":
 
@@ -222,8 +218,20 @@ if __name__ == "__main__":
     scheduler.CPULoad(); time.sleep(0.25)
     scheduler.CPUTemperature(); time.sleep(0.25)
     scheduler.CPUFanSpeed(); time.sleep(0.25)
-    if stats.Gpu.is_available():
+
+    # Verifique o status da GPU a partir do endpoint
+    gpu_endpoint = "http://192.168.50.55:5050/gpu-stats"
+    gpu_status = get_gpu_status_from_endpoint(gpu_endpoint)
+    if gpu_status:
+        logger.info(f"Status da GPU recebido: {gpu_status}")
+        gpu_mem_total = gpu_status.get("gpu_mem_total", 0)
+        gpu_mem_used = gpu_status.get("gpu_mem_used", 0)
+        gpu_util = gpu_status.get("gpu_util", 0)
+        logger.info(f"GPU Total: {gpu_mem_total} MB, Usado: {gpu_mem_used} MB, Utilização: {gpu_util}%")
         scheduler.GpuStats(); time.sleep(0.25)
+    else:
+        logger.warning("Não foi possível obter o status da GPU do endpoint.")
+
     scheduler.MemoryStats(); time.sleep(0.25)
     scheduler.DiskStats(); time.sleep(0.25)
     scheduler.NetStats(); time.sleep(0.25)
