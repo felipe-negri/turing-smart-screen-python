@@ -99,68 +99,21 @@ def get_hw_and_update(hwtype: Hardware.HardwareType, name: str = None) -> Hardwa
 
 
 def get_gpu_name() -> str:
-    # Determine which GPU to use, in case there are multiple : try to avoid using discrete GPU for stats
-    hw_gpus = []
-    for hardware in handle.Hardware:
-        if hardware.HardwareType == Hardware.HardwareType.GpuNvidia \
-                or hardware.HardwareType == Hardware.HardwareType.GpuAmd \
-                or hardware.HardwareType == Hardware.HardwareType.GpuIntel:
-            hw_gpus.append(hardware)
-
-    if len(hw_gpus) == 0:
-        # No supported GPU found on the system
-        logger.warning("No supported GPU found")
+    endpoint_url = "http://192.168.50.55:5050/gpu-stats"  # URL do endpoint
+    try:
+        response = requests.get(endpoint_url)
+        response.raise_for_status()
+        data = response.json()
+        gpu_name = data.get("gpu_name", "")
+        if gpu_name:
+            logger.debug(f"GPU encontrada no endpoint: {gpu_name}")
+            return gpu_name
+        else:
+            logger.warning("Nenhum nome de GPU encontrado no endpoint.")
+            return ""
+    except requests.RequestException as e:
+        logger.error(f"Erro ao buscar o nome da GPU do endpoint: {e}")
         return ""
-    elif len(hw_gpus) == 1:
-        # Found one supported GPU
-        logger.debug("Found one supported GPU: %s" % hw_gpus[0].Name)
-        return str(hw_gpus[0].Name)
-    else:
-        # Found multiple GPUs, try to determine which one to use
-        amd_gpus = 0
-        intel_gpus = 0
-        nvidia_gpus = 0
-
-        gpu_to_use = ""
-
-        # Count GPUs by manufacturer
-        for gpu in hw_gpus:
-            if gpu.HardwareType == Hardware.HardwareType.GpuAmd:
-                amd_gpus += 1
-            elif gpu.HardwareType == Hardware.HardwareType.GpuIntel:
-                intel_gpus += 1
-            elif gpu.HardwareType == Hardware.HardwareType.GpuNvidia:
-                nvidia_gpus += 1
-
-        logger.warning(
-            "Found %d GPUs on your system (%d AMD / %d Nvidia / %d Intel). Auto identify which GPU to use." % (
-                len(hw_gpus), amd_gpus, nvidia_gpus, intel_gpus))
-
-        if nvidia_gpus >= 1:
-            # One (or more) Nvidia GPU: use first available for stats
-            gpu_to_use = get_hw_and_update(Hardware.HardwareType.GpuNvidia).Name
-        elif amd_gpus == 1:
-            # No Nvidia GPU, only one AMD GPU: use it
-            gpu_to_use = get_hw_and_update(Hardware.HardwareType.GpuAmd).Name
-        elif amd_gpus > 1:
-            # No Nvidia GPU, several AMD GPUs found: try to use the real GPU but not the APU integrated in CPU
-            for gpu in hw_gpus:
-                if gpu.HardwareType == Hardware.HardwareType.GpuAmd:
-                    for sensor in gpu.Sensors:
-                        if sensor.SensorType == Hardware.SensorType.Load and str(sensor.Name).startswith("GPU Core"):
-                            # Found load sensor for this GPU: assume it is main GPU and use it for stats
-                            gpu_to_use = gpu.Name
-        else:
-            # No AMD or Nvidia GPU: there are several Intel GPUs, use first available for stats
-            gpu_to_use = get_hw_and_update(Hardware.HardwareType.GpuIntel).Name
-
-        if gpu_to_use:
-            logger.debug("This GPU will be used for stats: %s" % gpu_to_use)
-        else:
-            logger.warning("No supported GPU found (no GPU with load sensor)")
-
-        return gpu_to_use
-
 
 def get_net_interface_and_update(if_name: str) -> Hardware.Hardware:
     for hardware in handle.Hardware:
