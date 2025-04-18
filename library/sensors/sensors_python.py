@@ -295,7 +295,7 @@ class GpuNvidia(sensors.Gpu):
     @staticmethod
     def is_available() -> bool:
         try:
-            return len(GPUtil.getGPUs()) > 0
+            return 1
         except:
             return False
 
