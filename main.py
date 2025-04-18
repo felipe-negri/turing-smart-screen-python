@@ -218,31 +218,8 @@ if __name__ == "__main__":
     scheduler.CPULoad(); time.sleep(0.25)
     scheduler.CPUTemperature(); time.sleep(0.25)
     scheduler.CPUFanSpeed(); time.sleep(0.25)
-
-    # Verifique o status da GPU a partir do endpoint
-    gpu_endpoint = "http://192.168.50.55:5050/gpu-stats"
-    gpu_status = get_gpu_status_from_endpoint(gpu_endpoint)
-if gpu_status:
-    logger.info(f"Status da GPU recebido: {gpu_status}")
-    
-    gpu_load = gpu_status.get("load", 0)
-    gpu_mem_percentage = gpu_status.get("memory_percentage", 0)
-    gpu_mem_used = gpu_status.get("memory_used_mb", 0)
-    gpu_mem_total = gpu_status.get("total_memory_mb", 0)
-    gpu_temp = gpu_status.get("temperature", 0)
-    gpu_fan_percent = gpu_status.get("fan_percent", 0)
-    gpu_freq_ghz = gpu_status.get("freq_ghz", 0)
-    
-    logger.info(
-        f"GPU Load: {gpu_load}%, Memória Usada: {gpu_mem_used} MB, "
-        f"Memória Total: {gpu_mem_total} MB, Uso de Memória: {gpu_mem_percentage}%, "
-        f"Temperatura: {gpu_temp}°C, Ventilador: {gpu_fan_percent}%, "
-        f"Frequência: {gpu_freq_ghz} GHz"
-    )
-    scheduler.GpuStats(); time.sleep(0.25)
-else:
-    logger.warning("Não foi possível obter o status da GPU do endpoint.")
-
+    if stats.Gpu.is_available():
+        scheduler.GpuStats(); time.sleep(0.25)
     scheduler.MemoryStats(); time.sleep(0.25)
     scheduler.DiskStats(); time.sleep(0.25)
     scheduler.NetStats(); time.sleep(0.25)

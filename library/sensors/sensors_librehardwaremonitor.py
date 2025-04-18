@@ -30,6 +30,7 @@ from typing import Tuple
 import clr  # Clr is from pythonnet package. Do not install clr package
 import psutil
 from win32api import *
+import requests  # Certifique-se de que o módulo requests está instalado
 
 import library.sensors.sensors as sensors
 from library.log import logger
@@ -256,124 +257,55 @@ class Cpu(sensors.Cpu):
 
 
 class Gpu(sensors.Gpu):
-    # GPU to use is detected once, and its name is saved for future sensors readings
-    gpu_name = ""
-
-    # Latest FPS value is backed up in case next reading returns no value
-    prev_fps = 0
-
-    # Get GPU to use for sensors, and update it
-    @classmethod
-    def get_gpu_to_use(cls):
-        gpu_to_use = get_hw_and_update(Hardware.HardwareType.GpuAmd, cls.gpu_name)
-        if gpu_to_use is None:
-            gpu_to_use = get_hw_and_update(Hardware.HardwareType.GpuNvidia, cls.gpu_name)
-        if gpu_to_use is None:
-            gpu_to_use = get_hw_and_update(Hardware.HardwareType.GpuIntel, cls.gpu_name)
-
-        return gpu_to_use
+    endpoint_url = "http://192.168.50.55:5050/gpu-stats"  # URL do endpoint
 
     @classmethod
-    def stats(cls) -> Tuple[
-        float, float, float, float, float]:  # load (%) / used mem (%) / used mem (Mb) / total mem (Mb) / temp (°C)
-        gpu_to_use = cls.get_gpu_to_use()
-        if gpu_to_use is None:
-            # GPU not supported
-            return math.nan, math.nan, math.nan, math.nan, math.nan
+    def fetch_data_from_endpoint(cls):
+        try:
+            response = requests.get(cls.endpoint_url)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            logger.error(f"Erro ao buscar dados do endpoint: {e}")
+            return None
 
-        load = math.nan
-        used_mem = math.nan
-        total_mem = math.nan
-        temp = math.nan
-
-        for sensor in gpu_to_use.Sensors:
-            if sensor.SensorType == Hardware.SensorType.Load and str(sensor.Name).startswith(
-                    "GPU Core") and sensor.Value is not None:
-                load = float(sensor.Value)
-            elif sensor.SensorType == Hardware.SensorType.Load and str(sensor.Name).startswith("D3D 3D") and math.isnan(
-                    load) and sensor.Value is not None:
-                # Only use D3D usage if global "GPU Core" sensor is not available, because it is less
-                # precise and does not cover the entire GPU: https://www.hwinfo.com/forum/threads/what-is-d3d-usage.759/
-                load = float(sensor.Value)
-            elif sensor.SensorType == Hardware.SensorType.SmallData and str(sensor.Name).startswith(
-                    "GPU Memory Used") and sensor.Value is not None:
-                used_mem = float(sensor.Value)
-            elif sensor.SensorType == Hardware.SensorType.SmallData and str(sensor.Name).startswith(
-                    "D3D") and str(sensor.Name).endswith("Memory Used") and math.isnan(
-                used_mem) and sensor.Value is not None:
-                # Only use D3D memory usage if global "GPU Memory Used" sensor is not available, because it is less
-                # precise and does not cover the entire GPU: https://www.hwinfo.com/forum/threads/what-is-d3d-usage.759/
-                used_mem = float(sensor.Value)
-            elif sensor.SensorType == Hardware.SensorType.SmallData and str(sensor.Name).startswith(
-                    "GPU Memory Total") and sensor.Value is not None:
-                total_mem = float(sensor.Value)
-            elif sensor.SensorType == Hardware.SensorType.Temperature and str(sensor.Name).startswith(
-                    "GPU Core") and sensor.Value is not None:
-                temp = float(sensor.Value)
-
-        return load, (used_mem / total_mem * 100.0), used_mem, total_mem, temp
+    @classmethod
+    def stats(cls) -> Tuple[float, float, float, float, float]:
+        data = cls.fetch_data_from_endpoint()
+        if data:
+            load = data.get("load", math.nan)
+            memory_percentage = data.get("memory_percentage", math.nan)
+            memory_used_mb = data.get("memory_used_mb", math.nan)
+            total_memory_mb = data.get("total_memory_mb", math.nan)
+            temperature = data.get("temperature", math.nan)
+            return load, memory_percentage, memory_used_mb, total_memory_mb, temperature
+        return math.nan, math.nan, math.nan, math.nan, math.nan
 
     @classmethod
     def fps(cls) -> int:
-        gpu_to_use = cls.get_gpu_to_use()
-        if gpu_to_use is None:
-            # GPU not supported
-            return -1
-
-        try:
-            for sensor in gpu_to_use.Sensors:
-                if sensor.SensorType == Hardware.SensorType.Factor and "FPS" in str(
-                        sensor.Name) and sensor.Value is not None:
-                    # If a reading returns a value <= 0, returns old value instead
-                    if int(sensor.Value) > 0:
-                        cls.prev_fps = int(sensor.Value)
-                    return cls.prev_fps
-        except:
-            pass
-
-        # No FPS sensor for this GPU model
+        data = cls.fetch_data_from_endpoint()
+        if data:
+            return data.get("fps", -1)
         return -1
 
     @classmethod
     def fan_percent(cls) -> float:
-        gpu_to_use = cls.get_gpu_to_use()
-        if gpu_to_use is None:
-            # GPU not supported
-            return math.nan
-
-        try:
-            for sensor in gpu_to_use.Sensors:
-                if sensor.SensorType == Hardware.SensorType.Control and sensor.Value is not None:
-                    return float(sensor.Value)
-        except:
-            pass
-
-        # No Fan Speed sensor for this GPU model
+        data = cls.fetch_data_from_endpoint()
+        if data:
+            return data.get("fan_percent", math.nan)
         return math.nan
 
     @classmethod
     def frequency(cls) -> float:
-        gpu_to_use = cls.get_gpu_to_use()
-        if gpu_to_use is None:
-            # GPU not supported
-            return math.nan
-
-        try:
-            for sensor in gpu_to_use.Sensors:
-                if sensor.SensorType == Hardware.SensorType.Clock:
-                    # Keep only real core clocks, ignore effective core clocks
-                    if "Core" in str(sensor.Name) and "Effective" not in str(sensor.Name) and sensor.Value is not None:
-                        return float(sensor.Value)
-        except:
-            pass
-
-        # No Frequency sensor for this GPU model
+        data = cls.fetch_data_from_endpoint()
+        if data:
+            return data.get("freq_ghz", math.nan)
         return math.nan
 
     @classmethod
     def is_available(cls) -> bool:
-        cls.gpu_name = get_gpu_name()
-        return bool(cls.gpu_name)
+        data = cls.fetch_data_from_endpoint()
+        return data is not None
 
 
 class Memory(sensors.Memory):
