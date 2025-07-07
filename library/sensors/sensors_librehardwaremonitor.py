@@ -99,7 +99,7 @@ def get_hw_and_update(hwtype: Hardware.HardwareType, name: str = None) -> Hardwa
 
 
 def get_gpu_name() -> str:
-    endpoint_url = "https://gpu.negri.dev/gpu-stats"  # URL do endpoint
+    endpoint_url = "http://192.168.50.80:5050/gpu-stats"  # URL do endpoint
     try:
         response = requests.get(endpoint_url)
         response.raise_for_status()
@@ -210,7 +210,7 @@ class Cpu(sensors.Cpu):
 
 
 class Gpu(sensors.Gpu):
-    endpoint_url = "https://gpu.negri.dev/gpu-stats"  # URL do endpoint
+    endpoint_url = "http://192.168.50.80:5050/gpu-stats"  # URL do endpoint
 
     @classmethod
     def fetch_data_from_endpoint(cls):

@@ -381,7 +381,7 @@ class Gpu:
 
     @classmethod
     def stats(cls):
-        endpoint_url = "https://gpu.negri.dev/gpu-stats"  # URL do endpoint
+        endpoint_url = "http://192.168.50.80:5050/gpu-stats"  # URL do endpoint
         try:
             response = requests.get(endpoint_url)
             response.raise_for_status()
@@ -611,7 +611,7 @@ class Gpu:
     @staticmethod
     def is_available():
         try:
-            response = requests.get("https://gpu.negri.dev/gpu-stats")
+            response = requests.get("http://192.168.50.80:5050/gpu-stats")
             response.raise_for_status()
             return True
         except requests.RequestException:
